@@ -53,18 +53,25 @@ Instantiation
 world = World.from_file(os.path.abspath(os.path.join(os.path.dirname(__file__),'..','rotorpy','worlds','double_pillar.json')))
 
 # "world" is an optional argument. If you don't load a world it'll just provide an empty playground! 
-
+waypoints = np.array([[0,0,0],
+                          [1,0,0],
+                          [1,1,0],
+                          [0,1,0],
+                          [0,2,0],
+                          [2,2,0]
+                          ])
+yaw_angles = np.array([0, np.pi/2, 0, np.pi/4, 3*np.pi/2, 0])
 # An instance of the simulator can be generated as follows: 
 sim_instance = Environment(vehicle=Multirotor(quad_params),           # vehicle object, must be specified. 
                            controller=SE3Control(quad_params),        # controller object, must be specified.
-                           trajectory=CircularTraj(radius=2),         # trajectory object, must be specified.
-                           wind_profile=SinusoidWind(),               # OPTIONAL: wind profile object, if none is supplied it will choose no wind. 
+                           trajectory=MinSnap(waypoints,yaw_angles, v_avg = 2),         # trajectory object, must be specified.
+                           wind_profile=NoWind(),               # OPTIONAL: wind profile object, if none is supplied it will choose no wind. 
                            sim_rate     = 100,                        # OPTIONAL: The update frequency of the simulator in Hz. Default is 100 Hz.
                            imu          = None,                       # OPTIONAL: imu sensor object, if none is supplied it will choose a default IMU sensor.
                            mocap        = None,                       # OPTIONAL: mocap sensor object, if none is supplied it will choose a default mocap.  
                            estimator    = None,                       # OPTIONAL: estimator object
                            world        = world,                      # OPTIONAL: the world, same name as the file in rotorpy/worlds/, default (None) is empty world
-                           safety_margin= 0.25                        # OPTIONAL: defines the radius (in meters) of the sphere used for collision checking
+                           safety_margin= 0.0                       # OPTIONAL: defines the radius (in meters) of the sphere used for collision checking
                        )
 
 # This generates an Environment object that has a unique vehicle, controller, and trajectory.  
@@ -78,7 +85,7 @@ Execution
 # Setting an initial state. This is optional, and the state representation depends on the vehicle used. 
 # Generally, vehicle objects should have an "initial_state" attribute. 
 x0 = {'x': np.array([0,0,0]),
-      'v': np.zeros(3,),
+      'v': np.array([0,0,0]),
       'q': np.array([0, 0, 0, 1]), # [i,j,k,w]
       'w': np.zeros(3,),
       'wind': np.array([0,0,0]),  # Since wind is handled elsewhere, this value is overwritten
@@ -89,14 +96,14 @@ sim_instance.vehicle.initial_state = x0
 # All the arguments are listed below with their descriptions. 
 # You can save the animation (if animating) using the fname argument. Default is None which won't save it.
 
-results = sim_instance.run(t_final      = 20,       # The maximum duration of the environment in seconds
+results = sim_instance.run(t_final      = 4,       # The maximum duration of the environment in seconds
                            use_mocap    = False,       # Boolean: determines if the controller should use the motion capture estimates. 
                            terminate    = False,       # Boolean: if this is true, the simulator will terminate when it reaches the last waypoint.
                            plot            = True,     # Boolean: plots the vehicle states and commands   
                            plot_mocap      = True,     # Boolean: plots the motion capture pose and twist measurements
                            plot_estimator  = True,     # Boolean: plots the estimator filter states and covariance diagonal elements
                            plot_imu        = True,     # Boolean: plots the IMU measurements
-                           animate_bool    = True,     # Boolean: determines if the animation of vehicle state will play. 
+                           animate_bool    = False,     # Boolean: determines if the animation of vehicle state will play. 
                            animate_wind    = False,    # Boolean: determines if the animation will include a scaled wind vector to indicate the local wind acting on the UAV. 
                            verbose         = True,     # Boolean: will print statistics regarding the simulation. 
                            fname   = None # Filename is specified if you want to save the animation. The save location is rotorpy/data_out/. 

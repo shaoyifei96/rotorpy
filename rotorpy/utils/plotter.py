@@ -18,7 +18,7 @@ class Plotter():
 
         (self.time, self.x, self.x_des, self.v, 
         self.v_des, self.q, self.q_des, self.w, 
-        self.s, self.s_des, self.M, self.T, self.wind,
+        self.s, self.s_des, self.M, self.M_ref, self.T, self.T_ref, self.wind,
         self.accel, self.gyro, self.accel_gt,
         self.x_mc, self.v_mc, self.q_mc, self.w_mc, 
         self.filter_state, self.covariance, self.sd) = self.unpack_results(results)
@@ -118,11 +118,14 @@ class Plotter():
         ax.set_title('Commands')
         ax = axes[1]
         ax.plot(self.time, self.M[:,0], 'r.', self.time, self.M[:,1], 'g.', self.time, self.M[:,2], 'b.')
-        ax.legend(('x', 'y', 'z'))
+        # ax.plot(self.time, self.M_ref[:,0], 'r--', self.time, self.M_ref[:,1], 'g--', self.time, self.M_ref[:,2], 'b--')
+        ax.legend(('x', 'y', 'z','x_ref', 'y_ref', 'z_ref'))
         ax.set_ylabel('moment, N*m')
         ax.grid('major')
         ax = axes[2]
         ax.plot(self.time, self.T, 'k.')
+        ax.plot(self.time, self.T_ref, 'k--')
+        ax.legend(('thrust', 'ref thrust'))
         ax.set_ylabel('thrust, N')
         ax.set_xlabel('time, s')
         ax.grid('major')
@@ -202,6 +205,7 @@ class Plotter():
         time                = result['time']
         state               = result['state']
         control             = result['control']
+        control_ref         = result['ref_control'] 
         flat                = result['flat']
         imu_measurements    = result['imu_measurements']
         imu_gt              = result['imu_gt']
@@ -221,7 +225,10 @@ class Plotter():
         s_des = control['cmd_motor_speeds']
         s = state['rotor_speeds']
         M = control['cmd_moment']
+        M_ref = control_ref['cmd_moment']
+
         T = control['cmd_thrust']
+        T_ref = control_ref['cmd_thrust']
 
         wind = state['wind']
 
@@ -244,4 +251,4 @@ class Plotter():
             sd = []
             self.estimator_exists = False
 
-        return (time, x, x_des, v, v_des, q, q_des, w, s, s_des, M, T, wind, accel, gyro, accel_gt, x_mc, v_mc, q_mc, w_mc, filter_state, covariance, sd)
+        return (time, x, x_des, v, v_des, q, q_des, w, s, s_des, M, M_ref, T, T_ref, wind, accel, gyro, accel_gt, x_mc, v_mc, q_mc, w_mc, filter_state, covariance, sd)

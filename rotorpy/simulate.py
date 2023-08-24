@@ -122,6 +122,7 @@ def simulate(world, initial_state, vehicle, controller, trajectory, wind_profile
             control.append(sanitize_control_dic(controller.update(time[-1], mocap_measurements[-1], flat[-1])))
         else:
             control.append(sanitize_control_dic(controller.update(time[-1], state[-1], flat[-1])))
+            control_ref.append (sanitize_control_dic(controller.update_ref(time[-1], flat[-1])))
         state_dot = vehicle.statedot(state[-1], control[-1]['cmd_motor_speeds'], t_step)
         imu_measurements.append(imu.measurement(state[-1], state_dot, with_noise=True))
         imu_gt.append(imu.measurement(state[-1], state_dot, with_noise=False))
@@ -132,10 +133,11 @@ def simulate(world, initial_state, vehicle, controller, trajectory, wind_profile
     imu_gt = merge_dicts(imu_gt)
     mocap_measurements = merge_dicts(mocap_measurements)
     control         = merge_dicts(control)
+    control_ref     = merge_dicts(control_ref)
     flat            = merge_dicts(flat)
     state_estimate  = merge_dicts(state_estimate)
 
-    return (time, state, control, flat, imu_measurements, imu_gt, mocap_measurements, state_estimate, exit_status)
+    return (time, state, control, control_ref, flat, imu_measurements, imu_gt, mocap_measurements, state_estimate, exit_status)
 
 def merge_dicts(dicts_in):
     """

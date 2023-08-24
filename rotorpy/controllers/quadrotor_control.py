@@ -101,10 +101,13 @@ class SE3Control(object):
         #     """Return vector corresponding to given skew symmetric matrix."""
         #     return np.array([-S[1,2], S[0,2], -S[0,1]])
 
-        # Desired force vector.
+        # Desired accel vector.
+        e3 = np.array([0,0,1])
+
         t = flat_output['x_ddot']+ np.array([0, 0, self.g])
-        b3 = normalize(t) 
         F_des = self.mass * (t)# this is vectorized
+        # z direction should align with b3
+        b3 = normalize(t) 
 
         # Desired thrust is force projects onto b3 axis.
         # R = Rotation.from_quat(state['q']).as_matrix() #this is where most of the problem is, there is no error in rotation!
@@ -123,29 +126,48 @@ class SE3Control(object):
         # Orientation error.
         # S_err = 0.5 * (R_des.T @ R - R.T @ R_des)
         # att_err = vee_map(S_err)
-        
-        # Following section follows Mellinger paper to compute reference angular velocity
-        dot_u1 = np.dot(b3,flat_output['x_dddot'])
+
+        # Following section from Thomas' thesis
+        # F_des_dot = b3 * self.m * flat_output['x_dddot']        
+        # NOT ACTIVE !!! Following section follows Mellinger paper to compute reference angular velocity
+        dot_u1 = np.dot(b3,self.mass*flat_output['x_dddot'])
+
         hw = self.mass/u1*(flat_output['x_dddot']-dot_u1*b3)
         p  = np.dot(-hw, b2_des)
         q  = np.dot(hw, b1_des)
-        w_des = np.array([0, 0, flat_output['yaw_dot']])
-        r  = np.dot(w_des, b3_des)
+        r = ((1-np.dot(e3, b1_des)**2) * flat_output['yaw_dot'] - np.dot(e3, b2_des) * q) / np.dot(e3, b3_des)
         Omega = np.array([p, q, r])
+                                #2x3                               3x1
+        pq_dot = (self.mass/u1* ( np.stack([-b2_des, b1_des ]) @ flat_output['x_ddddot'].reshape(-1,1) )- 2 * dot_u1/u1 * np.vstack([p, q]) + r * np.vstack([q,-p])).flatten()
+        
+        def skew(x):
+            return np.array([[0, -x[2], x[1]],
+                            [x[2], 0, -x[0]],
+                            [-x[1], x[0], 0]])
+        
+        b_dot = R @ skew(Omega) 
+        b1_dot = b_dot[:,0]
+        b2_dot = b_dot[:,1]
+        b3_dot = b_dot[:,2]
 
-        wwu1b3 = np.cross(Omega, np.cross(Omega, u1*b3))
-        ddot_u1 = np.dot(b3, self.mass*flat_output['x_ddddot']) - np.dot(b3, wwu1b3)
-        ha = 1.0/u1*(self.mass*flat_output['x_ddddot'] - ddot_u1*b3 - 2*np.cross(Omega,dot_u1*b3) - wwu1b3)
-        p_dot = np.dot(-ha, b2_des)
-        q_dot = np.dot(ha, b1_des)
-        np.cross(Omega, Omega)
-        r_dot = flat_output['yaw_ddot'] *np.dot(np.array([0,0,1.0]), b3_des) #uniquely need yaw_ddot
-        Alpha = np.array([p_dot, q_dot, r_dot]) 
+        r_dot =  - (np.dot(e3,b3_dot )*r + 
+                    np.dot(e3,b2_dot )*q + 
+                    np.dot(e3,b2_des )*pq_dot[1] + 
+                    2*np.dot(e3,b1_des)*np.dot(e3,b1_dot)*flat_output['yaw_dot'] + 
+                    (np.dot(e3,b1_des)**2-1)*flat_output['yaw_ddot'] ) / np.dot(e3,b3)
+        # wwu1b3 = np.cross(Omega, np.cross(Omega, u1*b3))
+        # ddot_u1 = np.dot(b3, self.mass*flat_output['x_ddddot']) - np.dot(b3, wwu1b3)
+        # ha = 1.0/u1*(self.mass*flat_output['x_ddddot'] - ddot_u1*b3 - 2*np.cross(Omega,dot_u1*b3) - wwu1b3)
+        # p_dot = np.dot(-ha, b2_des)
+        # q_dot = np.dot(ha, b1_des)
+        # np.cross(Omega, Omega)
+        # r_dot = 0.0 
+
+        Alpha = np.array([pq_dot[0], pq_dot[1], r_dot]) 
 
 
 
         u2 =  self.inertia @ Alpha + np.cross(Omega, self.inertia @ Omega)
-        # print(u1,u2)
         TM = np.array([u1, u2[0], u2[1], u2[2]])
         cmd_motor_forces = self.TM_to_f @ TM
         cmd_motor_speeds = cmd_motor_forces / self.k_eta
