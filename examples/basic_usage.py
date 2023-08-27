@@ -60,11 +60,12 @@ waypoints = np.array([[0,0,0],
                           [0,2,0],
                           [2,2,0]
                           ])
-yaw_angles = np.array([0, np.pi/2, 0, np.pi/4, 3*np.pi/2, 0])
+# yaw_angles = np.array([0, np.pi/2, 0, np.pi/4, 3*np.pi/2, 0])
+yaw_angles = np.array([0, .5, 1, 1.5, 2, 2.5])
 # An instance of the simulator can be generated as follows: 
 sim_instance = Environment(vehicle=Multirotor(quad_params),           # vehicle object, must be specified. 
                            controller=SE3Control(quad_params),        # controller object, must be specified.
-                           trajectory=MinSnap(waypoints,yaw_angles, v_avg = 2),         # trajectory object, must be specified.
+                           trajectory=MinSnap(waypoints,yaw_angles, v_avg = 1.5),         # trajectory object, must be specified.
                            wind_profile=NoWind(),               # OPTIONAL: wind profile object, if none is supplied it will choose no wind. 
                            sim_rate     = 100,                        # OPTIONAL: The update frequency of the simulator in Hz. Default is 100 Hz.
                            imu          = None,                       # OPTIONAL: imu sensor object, if none is supplied it will choose a default IMU sensor.

@@ -17,7 +17,7 @@ class Plotter():
     def __init__(self, results, world):
 
         (self.time, self.x, self.x_des, self.v, 
-        self.v_des, self.q, self.q_des, self.w, 
+        self.v_des, self.q, self.q_des, self.q_ref, self.w, self.w_ref,
         self.s, self.s_des, self.M, self.M_ref, self.T, self.T_ref, self.wind,
         self.accel, self.gyro, self.accel_gt,
         self.x_mc, self.v_mc, self.q_mc, self.w_mc, 
@@ -63,14 +63,16 @@ class Plotter():
         # Orientation and Angular Velocity vs. Time
         (fig, axes) = plt.subplots(nrows=2, ncols=1, sharex=True, num='Attitude/Rate vs Time')
         ax = axes[0]
-        ax.plot(self.time, self.q_des[:,0], 'r', self.time, self.q_des[:,1], 'g', self.time, self.q_des[:,2], 'b', self.time, self.q_des[:,3], 'm')
-        ax.plot(self.time, self.q[:,0], 'r.',    self.time, self.q[:,1], 'g.',    self.time, self.q[:,2], 'b.',    self.time, self.q[:,3],     'm.')
+        ax.plot(self.time, self.q_des[:,0], 'r.', self.time, self.q_des[:,1], 'g.', self.time, self.q_des[:,2], 'b.', self.time, self.q_des[:,3], 'm.')
+        ax.plot(self.time, self.q[:,0], 'r',    self.time, self.q[:,1], 'g',    self.time, self.q[:,2], 'b',    self.time, self.q[:,3], 'm')
+        ax.plot(self.time, self.q_ref[:,0], 'r--', self.time, self.q_ref[:,1], 'g--', self.time, self.q_ref[:,2], 'b--', self.time, self.q_ref[:,3], 'm--')
         ax.legend(('i', 'j', 'k', 'w'))
         ax.set_ylabel('quaternion')
         ax.set_xlabel('time, s')
         ax.grid('major')
         ax = axes[1]
-        ax.plot(self.time, self.w[:,0], 'r.', self.time, self.w[:,1], 'g.', self.time, self.w[:,2], 'b.')
+        ax.plot(self.time, self.w[:,0], 'r', self.time, self.w[:,1], 'g', self.time, self.w[:,2], 'b')
+        ax.plot(self.time, self.w_ref[:,0], 'r--', self.time, self.w_ref[:,1], 'g--', self.time, self.w_ref[:,2], 'b--')
         ax.legend(('x', 'y', 'z'))
         ax.set_ylabel('angular velocity, rad/s')
         ax.set_xlabel('time, s')
@@ -220,15 +222,18 @@ class Plotter():
 
         q = state['q']
         q_des = control['cmd_q']
+        q_ref = control_ref['cmd_q'] #from diff flat
+
         w = state['w']
+        w_ref = control_ref['cmd_w'] #from diff flat
 
         s_des = control['cmd_motor_speeds']
         s = state['rotor_speeds']
         M = control['cmd_moment']
-        M_ref = control_ref['cmd_moment']
+        M_ref = control_ref['cmd_moment']#from diff flat
 
         T = control['cmd_thrust']
-        T_ref = control_ref['cmd_thrust']
+        T_ref = control_ref['cmd_thrust']#from diff flat
 
         wind = state['wind']
 
@@ -251,4 +256,4 @@ class Plotter():
             sd = []
             self.estimator_exists = False
 
-        return (time, x, x_des, v, v_des, q, q_des, w, s, s_des, M, M_ref, T, T_ref, wind, accel, gyro, accel_gt, x_mc, v_mc, q_mc, w_mc, filter_state, covariance, sd)
+        return (time, x, x_des, v, v_des, q, q_des, q_ref, w, w_ref, s, s_des, M, M_ref, T, T_ref, wind, accel, gyro, accel_gt, x_mc, v_mc, q_mc, w_mc, filter_state, covariance, sd)

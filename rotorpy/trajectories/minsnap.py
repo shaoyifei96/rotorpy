@@ -204,8 +204,8 @@ class MinSnap(object):
                     self.x_ddot_poly[i,j,:]   = np.polyder(self.x_poly[i,j,:], m=2)
                     self.x_dddot_poly[i,j,:]  = np.polyder(self.x_poly[i,j,:], m=3)
                     self.x_ddddot_poly[i,j,:] = np.polyder(self.x_poly[i,j,:], m=4)
-            self.yaw_dot_poly[i,0,:] = np.polyder(self.yaw_poly[i,0,:], m=1)
-            self.yaw_ddot_poly[i,0,:] = np.polyder(self.yaw_dot_poly[i,0,:], m=1)
+                self.yaw_dot_poly[i,0,:]  = np.polyder(self.yaw_poly[i,0,:], m=1)
+                self.yaw_ddot_poly[i,0,:] = np.polyder(self.yaw_poly[i,0,:], m=2)
 
         else:
             # Otherwise, there is only one waypoint so we just set everything = 0. 

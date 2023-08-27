@@ -108,14 +108,15 @@ class SE3Control(object):
         F_des = self.mass * (t)# this is vectorized
         # z direction should align with b3
         b3 = normalize(t) 
+        u1 = np.linalg.norm(F_des)
 
         # Desired thrust is force projects onto b3 axis.
         # R = Rotation.from_quat(state['q']).as_matrix() #this is where most of the problem is, there is no error in rotation!
         # b3 = R @ np.array([0, 0, 1])
-        u1 = np.dot(F_des, b3)
+        
 
         # Desired orientation to obtain force vector.
-        b3_des = normalize(F_des) #b3_des and b3 are the same
+        b3_des = b3 #b3_des and b3 are the same
         yaw_des = flat_output['yaw']
         c1_des = np.array([np.cos(yaw_des), np.sin(yaw_des), 0])
         b2_des = normalize(np.cross(b3_des, c1_des))
@@ -130,9 +131,9 @@ class SE3Control(object):
         # Following section from Thomas' thesis
         # F_des_dot = b3 * self.m * flat_output['x_dddot']        
         # NOT ACTIVE !!! Following section follows Mellinger paper to compute reference angular velocity
-        dot_u1 = np.dot(b3,self.mass*flat_output['x_dddot'])
+        dot_u1 = np.dot(b3,self.mass*flat_output['x_dddot']) #(4.17)
 
-        hw = self.mass/u1*(flat_output['x_dddot']-dot_u1*b3)
+        hw = self.mass/u1*(flat_output['x_dddot']) # this commented term is in mellinger, but not in thomas ! -self.mass/u1*(dot_u1*b3)
         p  = np.dot(-hw, b2_des)
         q  = np.dot(hw, b1_des)
         r = ((1-np.dot(e3, b1_des)**2) * flat_output['yaw_dot'] - np.dot(e3, b2_des) * q) / np.dot(e3, b3_des)
